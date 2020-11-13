@@ -3,19 +3,21 @@
 #include <fstream>
 #include <unordered_map>
 #include <unordered_set>
+#include <chrono>
 
 #include "Bitmap.h"
 
 using namespace std;
+using namespace std::chrono;
 
 const static int MAX_PACKET_NUM = 3e7 + 10;
 static int flow[MAX_PACKET_NUM];
+int packet_cnt;
 void load_data()
 {
     BOBHash32 hash_id(rand() % MAX_PRIME32);
     ifstream input("formatted00.dat", ios::in | ios::binary);
     char buf[2000] = {0};
-    int packet_cnt;
     for(packet_cnt = 0; packet_cnt < MAX_PACKET_NUM; ++packet_cnt)
     {
         if(!input.read(buf, 16)){
@@ -34,33 +36,52 @@ void test_bitmap()
     unordered_set<int> inSet;
     const static int insertTimesPerUpdate = 10;
     
+    /* test accuracy */
     for (int win = (1 << 12); win <= (1 << 14); win <<= 1) 
-        for (int mem = (1 << 16); mem <= (1 <<16); mem <<= 1)
+        for (int mem = (1 << 13); mem <= (1 <<13); mem <<= 1)
         {
-            bitmap.init(win, mem, insertTimesPerUpdate);
+            bitmap.init(win, mem);
             for(int i = 0; i + 10 <= win * 3; i += insertTimesPerUpdate){   // insert 3 wins
                 for(int j = i; j < i + 10; ++j)
                     bitmap.insert(flow[j]);
-                bitmap.update();
+                bitmap.update(insertTimesPerUpdate);
             }
 
             for(int iWin = 3; iWin < 15; ++iWin)        // insert a win each time
             {   
                 inSet.clear();
-                for(int i = iWin * win; i + 10 <= (iWin + 1) * win; i += insertTimesPerUpdate){   // insertion
-                    for(int j = i; j < i + 10; ++j){
+                for(int i = iWin * win; i + insertTimesPerUpdate <= (iWin + 1) * win; i += insertTimesPerUpdate){   // insertion
+                    for(int j = i; j < i + insertTimesPerUpdate; ++j){
                         bitmap.insert(flow[j]);
                         inSet.insert(flow[j]);
                     }
-                    bitmap.update();
+                    bitmap.update(insertTimesPerUpdate);
                 }
 
                 double bmCard = bitmap.query();
                 double cr = bmCard / inSet.size();
-                printf("query time range (%d-%d):\trelatedError:%.6lf\tbmCard:%.6lf\trealCard:%.6lf\n",
+                printf("query time range (%-6d-%-6d):\trelatedError:%.6lf\tbmCard:%.6lf\trealCard:%lu\n",
                     iWin * win, (iWin + 1) * win, fabs(cr - 1), bmCard, inSet.size());
             }
         }
+
+    /* test throughput */
+    int test_cycle = 1;
+    for(int iCase = 0; iCase < 3; ++iCase){
+        printf("iCase=%d:\t", iCase);
+        auto t1 = steady_clock::now();
+        for(int i = 0; i < test_cycle; ++i)
+            for(int j = 0; j + insertTimesPerUpdate <= packet_cnt; j += insertTimesPerUpdate)
+            {
+                for(int k = j; k < j + insertTimesPerUpdate; ++k)
+                    bitmap.insert(flow[k]);
+                bitmap.update(insertTimesPerUpdate);
+            }
+        auto t2 = steady_clock::now();
+        auto t3 = duration_cast<microseconds>(t2 - t1).count();
+        printf("throughput: %.6lf Mips\n", packet_cnt / (1.0 * t3 / test_cycle));
+    }
+
 }
 
 int main()
