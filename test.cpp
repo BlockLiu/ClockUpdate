@@ -90,37 +90,6 @@ void test_bloomfilter()
     BloomFilter bf;
     const static int insertTimesPerUpdate = 10;
 
-    /* test accuracy */
-    int _win = 1 << 16, _mem = 1 << 15;
-    int _hashnum = 1 + (0.6931 * _mem * 8) / (_win * 8);
-    bf.init(1<<16, 1<<14, _hashnum);
-    for(int i = 1000; i < 1000 + _win * 10; i += insertTimesPerUpdate)
-    {
-        for(int k = i; k < i + insertTimesPerUpdate; ++k)
-            bf.insert(k);
-        bf.update(insertTimesPerUpdate);
-    }
-    int beg = 1000 + _win * 10;
-    for(int iCase = 0; iCase < 5; ++iCase){
-        int end;
-        for(end = 0; end + insertTimesPerUpdate <= _win; end += insertTimesPerUpdate){
-            for(int k = beg + end; k < beg + end + insertTimesPerUpdate; ++k)
-                bf.insert(k);
-            bf.update(insertTimesPerUpdate);
-        }
-        double cr = 0, fpr = 0;
-        for(int i = beg; i < end; ++i)
-            if(bf.query(i))
-                cr += 1;
-        cr /= (end - beg);
-        for(int i = beg - 1; i >= beg - _win; --i)
-            if(bf.query(i))
-                fpr += 1;
-        fpr /= _win;
-        printf("iCase=%d:\tcorrect_rate:%.6lf\tfpr:%.6lf\n", iCase, cr, fpr);
-    }
-    
-
     for(int win = (1 << 16); win <= (1 << 16); win <<= 1)
         for(int mem = (1 << 13); mem <= (1 << 18); mem <<= 1)
         {
