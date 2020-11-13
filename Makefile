@@ -1,7 +1,7 @@
 CXX = g++
 CXFLAGS = -std=c++17 -O2 -mavx2
-deps = BOBhash32.h Bitmap.h
-obj = test.o BOBhash32.o Bitmap.o
+deps = BOBhash32.h Bitmap.h Bloomfilter.h
+obj = test.o BOBhash32.o Bitmap.o Bloomfilter.o
 program = test.out
 
 $(program): $(obj)
@@ -12,6 +12,9 @@ BOBhash32.o: BOBhash32.cpp BOBhash32.h
 
 Bitmap.o: Bitmap.cpp Bitmap.h BOBhash32.h
 	$(CXX) -c Bitmap.cpp $(CXFLAGS)
+
+Bloomfilter.o: Bloomfilter.cpp Bloomfilter.h BOBhash32.h
+	$(CXX) -c Bloomfilter.cpp $(CXFLAGS)
 
 test.o: test.cpp $(deps)
 	$(CXX) -c test.cpp $(CXFLAGS)

@@ -1,4 +1,4 @@
-#include "BloomFilter.h"
+#include "Bloomfilter.h"
 
 #include <immintrin.h> // AVX
 #include <stdio.h>
