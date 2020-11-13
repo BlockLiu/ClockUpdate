@@ -135,7 +135,7 @@ void test_cmsketch()
                     for(int j = 0; j + insertTimesPerUpdate <= packet_cnt; j += insertTimesPerUpdate)
                     {
                         for(int k = j; k < j + insertTimesPerUpdate; ++k)
-                            cms.insert(flow[k]);
+                            cms.insert((char*)&flow[k]);
                         cms.update(insertTimesPerUpdate);
                     }
                 auto t2 = steady_clock::now();

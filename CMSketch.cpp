@@ -10,12 +10,11 @@
 void CMSketch::init(int _window, int _d, int _memory)
 {
     d = _d;
+    memory = _memory;
+    window = _window;
     width = ((memory / (sizeof(uint16_t) + sizeof(uint8_t))) / 32) * 32;
     w = width / d;
     width = w * d;
-
-    window = _window;
-    memory = _memory;
 
     updateLen = ((1 << (sizeof(uint8_t) * 8)) - 2) * width / window;
     max_clock_val = (1 << (sizeof(uint8_t) * 8)) - 1;
