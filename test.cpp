@@ -6,6 +6,7 @@
 #include <chrono>
 
 #include "Bitmap.h"
+#include "Bloomfilter.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -66,7 +67,7 @@ void test_bitmap()
         }
 
     /* test throughput */
-    int test_cycle = 1;
+    int test_cycle = 10;
     for(int iCase = 0; iCase < 3; ++iCase){
         printf("iCase=%d:\t", iCase);
         auto t1 = steady_clock::now();
@@ -81,7 +82,36 @@ void test_bitmap()
         auto t3 = duration_cast<microseconds>(t2 - t1).count();
         printf("throughput: %.6lf Mips\n", packet_cnt / (1.0 * t3 / test_cycle));
     }
+}
 
+void test_bloomfilter()
+{
+    BloomFilter bf;
+    const static int insertTimesPerUpdate = 10;
+
+    for(int win = (1 << 16); win <= (1 << 16); win <<= 1)
+        for(int mem = (1 << 13); mem <= (1 << 18); mem <<= 1)
+        {
+            int hashnum = 1 + (0.6931 * mem * 8) / (win * 8);
+            bf.init(win, mem, hashnum);
+            
+            /* test throughput */
+            int test_cycle = 10;
+            for(int iCase = 0; iCase < 3; ++iCase){
+                printf("iCase=%d:\t", iCase);
+                auto t1 = steady_clock::now();
+                for(int i = 0; i < test_cycle; ++i)
+                    for(int j = 0; j + insertTimesPerUpdate <= packet_cnt; j += insertTimesPerUpdate)
+                    {
+                        for(int k = j; k < j + insertTimesPerUpdate; ++k)
+                            bf.insert(flow[k]);
+                        bf.update(insertTimesPerUpdate);
+                    }
+                auto t2 = steady_clock::now();
+                auto t3 = duration_cast<microseconds>(t2 - t1).count();
+                printf("throughput: %.6lf Mips\n", packet_cnt / (1.0 * t3 / test_cycle));
+            }
+        }
 }
 
 int main()
@@ -89,6 +119,7 @@ int main()
     srand(clock());
     load_data();
     test_bitmap();
+    test_bloomfilter();
 
     return EXIT_SUCCESS;
 }

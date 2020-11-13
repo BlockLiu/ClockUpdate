@@ -1,4 +1,4 @@
-#include "Bitmap.h"
+#include "BloomFilter.h"
 
 #include <immintrin.h> // AVX
 #include <stdio.h>
@@ -7,29 +7,29 @@
 #include <string.h>
 
 /* init bitmap with parameters */
-void Bitmap::init(int _window, int _memory, int _hashnum)
-{ 
+void BloomFilter::init(int _window, int _memory, int _hash_num)
+{
     window = _window;
     memory = _memory;
-    hash_num = _hashnum;
-
+    hash_num = _hash_num;
+    
     width = ((memory / sizeof(uint8_t)) / 32) * 32;
 
     updateLen = ((1 << (sizeof(uint8_t) * 8)) - 2) * width / window;
     max_counter_val = (1 << (sizeof(uint8_t) * 8)) - 1;
     lastUpdateIdx = 0;
 
-    for(int i = 0; i < _hashnum; ++i)
+    for(int i = 0; i < hash_num; ++i)
         hash[i].initialize(rand() % MAX_PRIME32);
     hash_time_offset.initialize(rand() % MAX_PRIME32);
 
     memset(buckets, 0, sizeof(uint8_t) * MAX_CELL_NUM);
-    printf("successfully initialize bitmap: winSize=%d, memory=%d, counterSize=%lu, width=%d, updateLen=%d\n",
+    printf("successfully initialize bloom-filter: winSize=%d, memory=%d, counterSize=%lu, width=%d, updateLen=%d\n",
     	window, memory, sizeof(uint8_t), width, updateLen);
 }
 
 /* insert an item */
-void Bitmap::insert(int x)
+void BloomFilter::insert(int x)
 {
     for(int i = 0; i < hash_num; ++i){
         int pos = hash[i].run((char*)&x, sizeof(int)) % width;
@@ -38,9 +38,9 @@ void Bitmap::insert(int x)
 }
 
 /* update buckets */
-void Bitmap::update(int insertTimesPerUpdate)
+void BloomFilter::update(int insertTimesPerUpdate)
 {
-	int _updateLen = (updateLen * insertTimesPerUpdate / 32) * 32;
+    int _updateLen = (updateLen * insertTimesPerUpdate / 32) * 32;
     int subAll = _updateLen / width;
     int len = _updateLen % width;
 
@@ -62,17 +62,19 @@ void Bitmap::update(int insertTimesPerUpdate)
     lastUpdateIdx = end;
 }
 
-/* query the cardinality */
-double Bitmap::query()
+/* answer membership query */
+bool BloomFilter::query(int x)
 {
-    double u = 0;
-    for(int i = 0; i < width; ++i)
-        u += buckets[i] == 0 ? 1 : 0;
-    return -width * log(u / width);
+    for(int i = 0; i < hash_num; ++i){
+        int pos = hash[i].run((char*)&x, sizeof(int)) % width;
+        if(buckets[pos] == 0)
+            return false;
+    }
+    return true;
 }
 
 /* update range using SIMD, end>=beg */
-void Bitmap::update_range(int beg, int end, int val)
+void BloomFilter::update_range(int beg, int end, int val)
 {
     if(val <= 0)    return;
     // for(int i = beg; i < end; ++i)
@@ -101,3 +103,10 @@ void Bitmap::update_range(int beg, int end, int val)
 		beg++;
 	}
 }
+
+
+
+
+
+
+
