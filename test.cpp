@@ -117,9 +117,9 @@ void test_bloomfilter()
 int main()
 {
     srand(clock());
-    load_data();
-    test_bitmap();
-    test_bloomfilter();
+    load_data();            printf("\n");
+    // test_bitmap();       printf("\n\n\n\n\n");
+    test_bloomfilter();     printf("\n\n\n\n\n");
 
     return EXIT_SUCCESS;
 }

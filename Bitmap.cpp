@@ -24,7 +24,7 @@ void Bitmap::init(int _window, int _memory, int _hashnum)
     hash_time_offset.initialize(rand() % MAX_PRIME32);
 
     memset(buckets, 0, sizeof(uint8_t) * MAX_CELL_NUM);
-    printf("successfully initialize bitmap: winSize=%d, memory=%d, counterSize=%lu, width=%d, updateLen=%d\n",
+    printf("successfully initialize bitmap: winSize=%d, memory=%d B, counterSize=%lu B, width=%d, updateLen=%d\n",
     	window, memory, sizeof(uint8_t), width, updateLen);
 }
 

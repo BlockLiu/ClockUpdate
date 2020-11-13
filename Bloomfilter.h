@@ -6,7 +6,7 @@
 class BloomFilter
 {
     static const int
-        MAX_CELL_NUM = 1e7,
+        MAX_CELL_NUM = 32 * 1e5 + 5,
         MAX_HASH_NUM = 50;
     int
         window,
