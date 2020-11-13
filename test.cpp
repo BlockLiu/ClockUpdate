@@ -7,6 +7,7 @@
 
 #include "Bitmap.h"
 #include "Bloomfilter.h"
+#include "CMSketch.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -145,12 +146,43 @@ void test_bloomfilter()
         }
 } 
 
+void test_cmsketch()
+{
+    CMSketch cms;
+    const static int insertTimesPerUpdate = 10;
+
+    for(int win = (1 << 16); win <= (1 << 16); win <<= 1)
+        for(int mem = (1 << 15); mem <= (1 << 18); mem <<= 1)
+        {
+            int hashnum = 3;
+            cms.init(win, hashnum, mem * 3);
+            
+            /* test throughput */
+            int test_cycle = 10;
+            for(int iCase = 0; iCase < 3; ++iCase){
+                printf("iCase=%d:\t", iCase);
+                auto t1 = steady_clock::now();
+                for(int i = 0; i < test_cycle; ++i)
+                    for(int j = 0; j + insertTimesPerUpdate <= packet_cnt; j += insertTimesPerUpdate)
+                    {
+                        for(int k = j; k < j + insertTimesPerUpdate; ++k)
+                            cms.insert(flow[k]);
+                        cms.update(insertTimesPerUpdate);
+                    }
+                auto t2 = steady_clock::now();
+                auto t3 = duration_cast<microseconds>(t2 - t1).count();
+                printf("throughput: %.6lf Mips\n", packet_cnt / (1.0 * t3 / test_cycle));
+            }
+        }
+} 
+
 int main()
 {
     srand(clock());
     load_data();            printf("\n");
     // test_bitmap();       printf("\n\n\n\n\n");
-    test_bloomfilter();     printf("\n\n\n\n\n");
+    // test_bloomfilter();     printf("\n\n\n\n\n");
+    test_cmsketch();     printf("\n\n\n\n\n");
 
     return EXIT_SUCCESS;
 }

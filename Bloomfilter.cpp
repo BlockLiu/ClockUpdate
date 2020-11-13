@@ -6,7 +6,7 @@
 #include <math.h>
 #include <string.h>
 
-/* init bitmap with parameters */
+/* init bloomfilter with parameters */
 void BloomFilter::init(int _window, int _memory, int _hash_num)
 {
     window = _window;
