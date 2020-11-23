@@ -1,26 +1,23 @@
+
+
+CFLAG = -std=c++17 -O2
 CXX = g++
-CXFLAGS = -std=c++17 -O2 -mavx2
-deps = BOBhash32.h Bitmap.h Bloomfilter.h CMSketch.h
-obj = test.o BOBhash32.o Bitmap.o Bloomfilter.o CMSketch.o
-program = test.out
+dirs = $(shell ls -d */) 
+OBJS = BOBHash32.o utils.o main.o \
+	CMSketch.o CMSketch_test.o \
+	BloomFilter.o BloomFilter_test.o \
+	Bitmap.o Bitmap_test.o
 
-$(program): $(obj)
-	$(CXX) -o $(program) $(obj) $(CXFLAGS)
+all: test
 
-BOBhash32.o: BOBhash32.cpp BOBhash32.h
-	$(CXX) -c BOBhash32.cpp $(CXFLAGS)
+finddirs:
+	$(foreach N,$(dirs),make -C $(N);)
 
-Bitmap.o: Bitmap.cpp Bitmap.h BOBhash32.h
-	$(CXX) -c Bitmap.cpp $(CXFLAGS)
+dclean:
+	$(foreach N,$(dirs),make -C $(N) clean;) 
 
-Bloomfilter.o: Bloomfilter.cpp Bloomfilter.h BOBhash32.h
-	$(CXX) -c Bloomfilter.cpp $(CXFLAGS)
+test: finddirs
+	$(CXX) -o test $(OBJS) $(CFLAG)
 
-CMSketch.o: CMSketch.cpp CMSketch.h BOBhash32.h
-	$(CXX) -c CMSketch.cpp $(CXFLAGS)
-
-test.o: test.cpp $(deps)
-	$(CXX) -c test.cpp $(CXFLAGS)
-
-clean:
-	rm -rf $(obj) $(program)
+clean: dclean
+	rm -rf $(OBJS) test
