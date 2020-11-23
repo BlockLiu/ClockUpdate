@@ -97,8 +97,5 @@ void testCMSketch_th(TRACE &trace, const int window_sz, const int memory, int cl
         auto t3 = duration_cast<microseconds>(t2 - t1).count();
         cout << "(CMSketch): throughput: " << packetCnt * test_cycle / (1.0 * t3) << " MIPs" << endl;
     }
+    delete[] packetIDs;
 }
-
-// win 1<<14
-// mem 1<<19
-// clocksize 4

@@ -1,9 +1,11 @@
 #include <math.h>
 #include <immintrin.h> // AVX
-#include "Bitmap.h"
+#include "BloomFilter.h"
 
-Bitmap::Bitmap(int _window, int _memory, int _hash_num, int _countersize)
-    : window_sz(_window), hash_num(_hash_num), lastUpdateIdx(0), clocksize(_countersize)
+// unit of memory is byte
+BloomFilter::BloomFilter(int _window, int _memory, int _hash_num, int _countersize, int _insertTimesPerUpdate)
+    : window_sz(_window), hash_num(_hash_num), lastUpdateIdx(0), clocksize(_countersize),
+    insertTimesPerUpdate(_insertTimesPerUpdate), updating(0), blocking(1), whileing(1)
 {
     width = 8 * _memory / _countersize;
     updateLen = ((1 << _countersize) - 2) * width / _window;
@@ -13,16 +15,20 @@ Bitmap::Bitmap(int _window, int _memory, int _hash_num, int _countersize)
 
     hash_func = new BOBHash32[hash_num];
     for(int i = 0; i < hash_num; ++i)
-        hash_func[i].initialize(rand() % MAX_PRIME32);
+        hash_func[i].initialize(100 + i);
+
+    updator = thread(BloomFilter::updateThread, this);
 }
 
-Bitmap::~Bitmap()
+BloomFilter::~BloomFilter()
 {
+    this->whileing = 0;
+    updator.join();
     delete[] clocks;
     delete[] hash_func;
 }
 
-void Bitmap::insert(int x)
+void BloomFilter::insert(int x)
 {
     for(int i = 0; i < hash_num; ++i)
     {
@@ -31,7 +37,16 @@ void Bitmap::insert(int x)
     }
 }
 
-void Bitmap::updateClock(int insertTimesPerUpdate)
+void BloomFilter::Insert(int j, int flow[])
+{
+    this->updating = 1;
+    this->blocking = 0;
+    for(int k = j; k < j + insertTimesPerUpdate; ++k)
+        this->insert(flow[k]);
+    while(this->updating);
+}
+
+void BloomFilter::updateClock()
 {
     int temp = updateLen * insertTimesPerUpdate;
     int subAll = temp / width;
@@ -55,15 +70,18 @@ void Bitmap::updateClock(int insertTimesPerUpdate)
     lastUpdateIdx = end;
 }
 
-double Bitmap::query()
+bool BloomFilter::query(int x)
 {
-    double u = 0;
-    for(int i = 0; i < width; ++i)
-        u += clocks[i] == 0 ? 1 : 0;
-    return -width * log(u / width);
+    for(int i = 0; i < hash_num; ++i)
+    {
+        int pos = hash_func[i].run((char*)&x, sizeof(int)) % width;
+        if(clocks[pos] == 0)
+            return false;
+    }
+    return true;
 }
 
-void Bitmap::updateRange(int beg, int end, int val)
+void BloomFilter::updateRange(int beg, int end, int val)
 {
     if(val <= 0)    return;
     
@@ -84,3 +102,15 @@ void Bitmap::updateRange(int beg, int end, int val)
         beg++;
     }
 }
+
+void BloomFilter::updateThread(BloomFilter *bf)
+{
+    while(bf->whileing)
+    {
+        while(bf->whileing && bf->blocking);
+        bf->updateClock();
+        bf->blocking = 1;
+        bf->updating = 0;
+    }
+}
+

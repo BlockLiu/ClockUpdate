@@ -72,4 +72,5 @@ void testBloomFilter_th(TRACE &trace, const int window_sz, const int memory, int
         auto t3 = duration_cast<microseconds>(t2 - t1).count();
         cout << "(BloomFilter): throughput: " << packetCnt * test_cycle / (1.0 * t3) << " MIPs" << endl;
     }
+    delete[] packetIDs;
 }

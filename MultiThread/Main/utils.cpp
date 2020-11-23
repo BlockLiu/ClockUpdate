@@ -5,7 +5,7 @@ void ReadTraces(TRACE* traces)
 {
     for (int datafileCnt = START_FILE_NO; datafileCnt <= END_FILE_NO; datafileCnt++) {
 		char datafileName[100];
-		sprintf(datafileName, "formatted%02d.dat", datafileCnt);
+		sprintf(datafileName, "../formatted%02d.dat", datafileCnt);
 
 		FILE* fin = fopen(datafileName, "rb");
 		if(fin == nullptr){
